@@ -891,7 +891,11 @@ function wireCalendarEvents(){
   document.querySelectorAll('.cal-x').forEach(el=>{
     el.addEventListener('click', (e)=>{
       e.stopPropagation();
-      unscheduleTask(el.dataset.id);
+      if(el.dataset.action === 'dup'){
+        duplicateTask(el.dataset.id, false);
+      } else {
+        unscheduleTask(el.dataset.id);
+      }
     });
   });
 }
@@ -914,6 +918,19 @@ async function unscheduleTask(id){
   render();
 }
 
+async function duplicateTask(id, keepSchedule){
+  const t = tasks.find(x=>x.id===id);
+  if(!t) return;
+  const copy = { ...t, id: uid(), status:'afazer' };
+  if(!keepSchedule){
+    copy.scheduledDate = null;
+    copy.scheduledHour = null;
+  }
+  tasks.push(copy);
+  await saveTasks();
+  render();
+}
+
 function renderCalendar(){
   const HOURS = [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
   const days = Array.from({length:7}, (_,i)=>addDays(calendarWeekStart, i));
@@ -924,8 +941,9 @@ function renderCalendar(){
     const areaTasks = unscheduled.filter(t=>t.area===areaKey);
     if(!areaTasks.length) return '';
     const chips = areaTasks.map(t=>`
-      <div class="cal-chip col-${t.area} ${selectedForSchedule===t.id?'selected':''}" data-id="${t.id}" style="border-left-color:var(--${t.area});">
+      <div class="cal-chip col-${t.area} ${selectedForSchedule===t.id?'selected':''}" data-id="${t.id}" style="border-left-color:var(--${t.area}); position:relative; padding-right:22px;">
         ${escapeHtml(t.title)}
+        <span class="chip-dup" data-id="${t.id}" title="Duplicar" style="position:absolute; top:4px; right:6px; font-size:11px; color:var(--ink-soft); cursor:pointer;">⎘</span>
       </div>
     `).join('');
     return `
@@ -952,7 +970,8 @@ function renderCalendar(){
         <div class="cal-block spanning ${t.status==='feito'?'done':''} ${t.status==='naofeito'?'naofeito':''}" data-id="${t.id}" style="border-left-color:var(--${t.area}); height:${heightPx}px;">
           ${escapeHtml(t.title)}
           <div class="cal-dur">${dur}h</div>
-          <span class="cal-x" data-id="${t.id}">✕</span>
+          <span class="cal-x" data-id="${t.id}" data-action="dup" style="right:14px; color:var(--ink-soft);" title="Duplicar">⎘</span>
+          <span class="cal-x" data-id="${t.id}" data-action="remove">✕</span>
         </div>
       `;
       }).join('');
