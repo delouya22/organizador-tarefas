@@ -740,8 +740,22 @@ async function cycleStatus(id){
   render();
 }
 
+async function setStatus(id, status){
+  const t = tasks.find(x=>x.id===id);
+  if(!t) return;
+  t.status = status;
+  await saveTasks();
+  render();
+}
+
 function statusLabel(s){
   return {afazer:'A fazer', andamento:'Em andamento', feito:'Feito', naofeito:'Não feito'}[s];
+}
+
+function statusSelectOptions(current){
+  return ['afazer','andamento','feito','naofeito'].map(s=>
+    `<option value="${s}" ${s===current?'selected':''}>${statusLabel(s)}</option>`
+  ).join('');
 }
 
 function tipoLabel(t){
@@ -813,8 +827,9 @@ function render(){
   document.querySelectorAll('.card-title, .dl-title').forEach(el=>{
     el.addEventListener('click', ()=>openModal(el.dataset.id));
   });
-  document.querySelectorAll('.js-cycle').forEach(el=>{
-    el.addEventListener('click', ()=>cycleStatus(el.dataset.id));
+  document.querySelectorAll('.js-status-select').forEach(el=>{
+    el.addEventListener('click', (e)=>e.stopPropagation());
+    el.addEventListener('change', ()=>setStatus(el.dataset.id, el.value));
   });
   document.querySelectorAll('.js-edit').forEach(el=>{
     el.addEventListener('click', ()=>openModal(el.dataset.id));
@@ -971,8 +986,7 @@ function renderBoard(filtered){
     const areaTasks = filtered.filter(t=>t.area===areaKey)
       .sort((a,b)=>{
         const prioOrder = {alta:0, media:1, baixa:2};
-        const statusOrder = {afazer:0, andamento:1, feito:2};
-        return statusOrder[a.status]-statusOrder[b.status] || prioOrder[a.prio]-prioOrder[b.prio];
+        return prioOrder[a.prio]-prioOrder[b.prio];
       });
     const cardsHtml = areaTasks.length ? areaTasks.map(cardHtml).join('') : '<div class="empty">Nenhuma tarefa aqui.</div>';
     const total = tasks.filter(t=>t.area===areaKey).length;
@@ -1004,7 +1018,7 @@ function renderDeadlineList(filtered){
         <span class="dl-area-tag">${AREAS[t.area].label}</span>
         <p class="dl-title" data-id="${t.id}">${escapeHtml(t.title)}</p>
         <span class="tag prio-${t.prio}">${t.prio}</span>
-        <button class="js-cycle dl-sub" data-id="${t.id}" style="background:none; border:1px solid var(--line); border-radius:2px; cursor:pointer;">${statusLabel(t.status)} →</button>
+        <select class="js-status-select dl-sub" data-id="${t.id}" style="font-family: 'IBM Plex Mono', monospace; font-size:9.5px; border:1px solid var(--line); border-radius:2px; background:var(--paper-white); color:var(--ink);">${statusSelectOptions(t.status)}</select>
       </div>
     `;
   }).join('');
@@ -1016,7 +1030,7 @@ function renderDeadlineList(filtered){
         <span class="dl-area-tag">${AREAS[t.area].label}</span>
         <p class="dl-title" data-id="${t.id}">${escapeHtml(t.title)}</p>
         <span class="tag prio-${t.prio}">${t.prio}</span>
-        <button class="js-cycle dl-sub" data-id="${t.id}" style="background:none; border:1px solid var(--line); border-radius:2px; cursor:pointer;">${statusLabel(t.status)} →</button>
+        <select class="js-status-select dl-sub" data-id="${t.id}" style="font-family: 'IBM Plex Mono', monospace; font-size:9.5px; border:1px solid var(--line); border-radius:2px; background:var(--paper-white); color:var(--ink);">${statusSelectOptions(t.status)}</select>
       </div>
     `;
   }).join('');
@@ -1050,7 +1064,7 @@ function cardHtml(t){
       </div>
       ${t.notes? `<div class="due" style="margin-top:6px;">${escapeHtml(t.notes)}</div>`:''}
       <div class="card-actions">
-        <button class="js-cycle" data-id="${t.id}">${statusLabel(t.status)} → avançar</button>
+        <select class="js-status-select" data-id="${t.id}" style="font-family:'IBM Plex Mono', monospace; font-size:9.5px; border:1px solid var(--line); border-radius:2px; background:var(--paper); color:var(--ink-soft); padding:3px 4px;">${statusSelectOptions(t.status)}</select>
         <button class="js-edit" data-id="${t.id}">Editar</button>
       </div>
     </div>
