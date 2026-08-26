@@ -30,15 +30,15 @@
     --line: #b9ad8d;
     --mestrado: #2B4C7E;
     --mestrado-bg: #DEE6EF;
-    --movimento1: #7A1F1F;
-    --movimento1-bg: #E8D6D6;
-    --movimento2: #A32B2B;
-    --movimento2-bg: #F0DCDA;
-    --partido: #C0524B;
-    --partido-bg: #F3E0DE;
-    --pessoal: #8A6B3D;
-    --pessoal-bg: #EAE0CB;
-    --outros: #5C5C5C;
+    --movimento1: #3F6B35;
+    --movimento1-bg: #DEE8D8;
+    --movimento2: #6B4A8A;
+    --movimento2-bg: #E4DBEC;
+    --partido: #A32B2B;
+    --partido-bg: #F0DCDA;
+    --pessoal: #B8860B;
+    --pessoal-bg: #F1E6C8;
+    --outros: #4A4A4A;
     --outros-bg: #DDDDDD;
     --stamp: #A32B2B;
     --paper-white: #F5F0E1;
@@ -920,12 +920,19 @@ function renderCalendar(){
   const dayNames = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
 
   const unscheduled = tasks.filter(t=>!t.scheduledDate && t.status!=='feito');
-  const sidebarHtml = unscheduled.length ? unscheduled.map(t=>`
-    <div class="cal-chip col-${t.area} ${selectedForSchedule===t.id?'selected':''}" data-id="${t.id}" style="border-left-color:var(--${t.area});">
-      ${escapeHtml(t.title)}
-      <div style="font-family:'IBM Plex Mono',monospace; font-size:8.5px; color:var(--ink-soft); margin-top:2px;">${AREAS[t.area].label}</div>
-    </div>
-  `).join('') : '<div style="font-family:\'IBM Plex Mono\',monospace; font-size:10px; color:var(--ink-soft);">Tudo encaixado ou concluído.</div>';
+  const sidebarHtml = unscheduled.length ? Object.keys(AREAS).map(areaKey=>{
+    const areaTasks = unscheduled.filter(t=>t.area===areaKey);
+    if(!areaTasks.length) return '';
+    const chips = areaTasks.map(t=>`
+      <div class="cal-chip col-${t.area} ${selectedForSchedule===t.id?'selected':''}" data-id="${t.id}" style="border-left-color:var(--${t.area});">
+        ${escapeHtml(t.title)}
+      </div>
+    `).join('');
+    return `
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:0.3px; color:var(--${areaKey}); border-bottom:2px solid var(--${areaKey}); padding-bottom:3px; margin:12px 0 6px;">${AREAS[areaKey].label}</div>
+      ${chips}
+    `;
+  }).join('') : '<div style="font-family:\'IBM Plex Mono\',monospace; font-size:10px; color:var(--ink-soft);">Tudo encaixado ou concluído.</div>';
 
   const headCells = days.map((d,i)=>`
     <div class="cal-day-head">${dayNames[i]}<br><span class="dnum">${d.getDate()}/${d.getMonth()+1}</span></div>
