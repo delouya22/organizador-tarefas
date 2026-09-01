@@ -774,7 +774,7 @@ function setView(v){
 
 function render(){
   const app = document.getElementById('app');
-  const filtered = tasks.filter(t=> filterStatus==='todas' ? true : t.status===filterStatus);
+  const filtered = tasks.filter(t=> filterStatus==='todas' ? t.status!=='feito' : t.status===filterStatus);
 
   let mainContent;
   if(viewMode === 'prazo'){
@@ -850,7 +850,8 @@ function wireCalendarEvents(){
 
   document.querySelectorAll('.cal-chip').forEach(el=>{
     el.setAttribute('draggable','true');
-    el.addEventListener('click', ()=>{
+    el.addEventListener('click', (e)=>{
+      if(e.target.classList.contains('chip-dup')) return;
       selectedForSchedule = (selectedForSchedule===el.dataset.id) ? null : el.dataset.id;
       render();
     });
@@ -858,12 +859,18 @@ function wireCalendarEvents(){
       e.dataTransfer.setData('text/plain', el.dataset.id);
     });
   });
+  document.querySelectorAll('.chip-dup').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      duplicateTask(el.dataset.id, false);
+    });
+  });
 
   document.querySelectorAll('.cal-cell').forEach(el=>{
     el.addEventListener('click', (e)=>{
       if(e.target.classList.contains('cal-x') || e.target.closest('.cal-block')) return;
       if(selectedForSchedule){
-        scheduleTask(selectedForSchedule, el.dataset.date, parseInt(el.dataset.hour));
+        scheduleTask(selectedForSchedule, el.dataset.date, parseFloat(el.dataset.hour));
         selectedForSchedule = null;
       }
     });
@@ -873,7 +880,7 @@ function wireCalendarEvents(){
       e.preventDefault();
       el.classList.remove('droptarget');
       const taskId = e.dataTransfer.getData('text/plain');
-      if(taskId) scheduleTask(taskId, el.dataset.date, parseInt(el.dataset.hour));
+      if(taskId) scheduleTask(taskId, el.dataset.date, parseFloat(el.dataset.hour));
     });
   });
 
@@ -932,16 +939,23 @@ async function duplicateTask(id, keepSchedule){
 }
 
 function renderCalendar(){
-  const HOURS = [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
+  const SLOTS = [];
+  for(let i=7*2; i<=22*2; i++){ SLOTS.push(i/2); }
   const days = Array.from({length:7}, (_,i)=>addDays(calendarWeekStart, i));
   const dayNames = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+
+  function fmtSlot(h){
+    const hh = Math.floor(h);
+    const mm = (h % 1 === 0.5) ? '30' : '00';
+    return String(hh).padStart(2,'0') + ':' + mm;
+  }
 
   const unscheduled = tasks.filter(t=>!t.scheduledDate && t.status!=='feito');
   const sidebarHtml = unscheduled.length ? Object.keys(AREAS).map(areaKey=>{
     const areaTasks = unscheduled.filter(t=>t.area===areaKey);
     if(!areaTasks.length) return '';
     const chips = areaTasks.map(t=>`
-      <div class="cal-chip col-${t.area} ${selectedForSchedule===t.id?'selected':''}" data-id="${t.id}" style="border-left-color:var(--${t.area}); position:relative; padding-right:22px;">
+      <div class="cal-chip col-${t.area} ${selectedForSchedule===t.id?'selected':''}" data-id="${t.id}" style="border-left-color:var(--${t.area}); background:var(--${t.area}-bg); position:relative; padding-right:22px;">
         ${escapeHtml(t.title)}
         <span class="chip-dup" data-id="${t.id}" title="Duplicar" style="position:absolute; top:4px; right:6px; font-size:11px; color:var(--ink-soft); cursor:pointer;">⎘</span>
       </div>
@@ -956,26 +970,27 @@ function renderCalendar(){
     <div class="cal-day-head">${dayNames[i]}<br><span class="dnum">${d.getDate()}/${d.getMonth()+1}</span></div>
   `).join('');
 
-  const ROW_H = 40;
+  const HALF = 20;
   let bodyRows = '';
-  HOURS.forEach(h=>{
-    bodyRows += `<div class="cal-hour-label">${String(h).padStart(2,'0')}h</div>`;
+  SLOTS.forEach(h=>{
+    const isWholeHour = (h % 1 === 0);
+    bodyRows += `<div class="cal-hour-label" style="${isWholeHour?'font-weight:600;':'opacity:0.6;'}">${fmtSlot(h)}</div>`;
     days.forEach(d=>{
       const dateStr = isoDate(d);
       const cellTasks = tasks.filter(t=>t.scheduledDate===dateStr && t.scheduledHour===h);
       const blocksHtml = cellTasks.map(t=>{
         const dur = t.duration || 1;
-        const heightPx = Math.max(ROW_H * dur - 2, ROW_H - 2);
+        const heightPx = Math.max(dur * 2 * HALF - 2, HALF - 2);
         return `
-        <div class="cal-block spanning ${t.status==='feito'?'done':''} ${t.status==='naofeito'?'naofeito':''}" data-id="${t.id}" style="border-left-color:var(--${t.area}); height:${heightPx}px;">
+        <div class="cal-block spanning ${t.status==='feito'?'done':''} ${t.status==='naofeito'?'naofeito':''}" data-id="${t.id}" style="border:1px solid var(--${t.area}); border-left-width:5px; background:var(--${t.area}-bg); height:${heightPx}px;">
           ${escapeHtml(t.title)}
-          <div class="cal-dur">${dur}h</div>
+          <div class="cal-dur">${fmtSlot(h)} · ${dur}h</div>
           <span class="cal-x" data-id="${t.id}" data-action="dup" style="right:14px; color:var(--ink-soft);" title="Duplicar">⎘</span>
           <span class="cal-x" data-id="${t.id}" data-action="remove">✕</span>
         </div>
       `;
       }).join('');
-      bodyRows += `<div class="cal-cell" data-date="${dateStr}" data-hour="${h}">${blocksHtml}</div>`;
+      bodyRows += `<div class="cal-cell" data-date="${dateStr}" data-hour="${h}" style="height:${HALF}px;">${blocksHtml}</div>`;
     });
   });
 
