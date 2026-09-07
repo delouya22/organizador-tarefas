@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<style id="print-orientation"></style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Organizador de Tarefas</title>
@@ -402,6 +403,20 @@
     .stamp-mark{ color:#000 !important; border-color:#000 !important; }
     .deadline-list{ max-width:none; }
     .deadline-row{ break-inside:avoid; box-shadow:none !important; }
+
+    .cal-nav, .cal-hint{ display:none !important; }
+    .cal-wrap{ padding:0; }
+    .cal-body{ align-items:stretch; }
+    .cal-grid-scroll{ overflow:visible !important; }
+    .cal-grid{ min-width:0 !important; width:100%; border:1px solid #000 !important; }
+    .cal-corner, .cal-day-head, .cal-hour-label{
+      background:#fff !important; border-color:#999 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;
+    }
+    .cal-cell{ border-color:#ccc !important; }
+    .cal-block{ box-shadow:none !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .cal-sidebar{ border-color:#000 !important; background:#fff !important; max-height:none; }
+    body.print-cal-only .cal-sidebar{ display:none !important; }
+    body.print-cal-only .cal-grid-scroll{ width:100%; }
   }
 </style>
 
@@ -532,6 +547,15 @@ if(hasFirebaseConfig && !hasClaudeStorage){
   fbDb = firebase.firestore();
 }
 
+function normalizeTasks(){
+  let changed = false;
+  tasks.forEach(t=>{
+    if(!AREAS[t.area]){ t.area = 'outros'; t.sub = t.sub || 'Outro'; changed = true; }
+    if(!t.duration){ t.duration = 1; changed = true; }
+  });
+  return changed;
+}
+
 async function loadTasks(){
   if(hasFirebaseConfig && !hasClaudeStorage){
     renderAuthGate();
@@ -556,6 +580,7 @@ async function loadTasks(){
   }catch(e){
     tasks = [];
   }
+  if(normalizeTasks()) await saveTasks();
   render();
 }
 
@@ -564,7 +589,9 @@ function attachFirestoreListener(){
   const docRef = fbDb.collection('users').doc(currentUser.uid).collection('data').doc('tasks');
   unsubscribeSnapshot = docRef.onSnapshot(snap=>{
     tasks = (snap.exists && snap.data().tasks) ? snap.data().tasks : [];
+    const changed = normalizeTasks();
     render();
+    if(changed) saveTasks();
   }, err=>{
     console.error('erro ao sincronizar', err);
   });
@@ -697,6 +724,12 @@ function closeModal(){
   if(o) o.remove();
 }
 
+function setPrintOrientation(mode){
+  const el = document.getElementById('print-orientation');
+  if(el) el.textContent = `@page{ size: ${mode}; margin: 10mm; }`;
+}
+window.addEventListener('afterprint', ()=>{ document.body.classList.remove('print-cal-only'); });
+
 function escapeHtml(s){
   return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -804,7 +837,10 @@ function render(){
       <button class="add-btn" id="btn-add">+ Nova tarefa</button>
       <button class="filter-btn" id="btn-export">Exportar (.json)</button>
       <button class="filter-btn" id="btn-import">Importar (.json)</button>
-      <button class="filter-btn" id="btn-print">Imprimir / PDF</button>
+      ${viewMode==='calendario' ? `
+        <button class="filter-btn" id="btn-print-cal-only">Imprimir: só calendário</button>
+        <button class="filter-btn" id="btn-print-cal-full">Imprimir: calendário + tarefas</button>
+      ` : `<button class="filter-btn" id="btn-print">Imprimir / PDF</button>`}
       ${(hasFirebaseConfig && !hasClaudeStorage && currentUser) ? '<button class="filter-btn" id="btn-logout">Sair (' + escapeHtml(currentUser.email) + ')</button>' : ''}
       <input type="file" id="file-import" accept="application/json" style="display:none;" />
     </div>
@@ -820,7 +856,24 @@ function render(){
   document.getElementById('btn-add').addEventListener('click', ()=>openModal());
   document.getElementById('btn-export').addEventListener('click', exportTasks);
   document.getElementById('btn-import').addEventListener('click', ()=>document.getElementById('file-import').click());
-  document.getElementById('btn-print').addEventListener('click', ()=>window.print());
+  const printBtn = document.getElementById('btn-print');
+  if(printBtn) printBtn.addEventListener('click', ()=>{
+    setPrintOrientation('portrait');
+    document.body.classList.remove('print-cal-only');
+    window.print();
+  });
+  const printCalOnlyBtn = document.getElementById('btn-print-cal-only');
+  if(printCalOnlyBtn) printCalOnlyBtn.addEventListener('click', ()=>{
+    setPrintOrientation('landscape');
+    document.body.classList.add('print-cal-only');
+    window.print();
+  });
+  const printCalFullBtn = document.getElementById('btn-print-cal-full');
+  if(printCalFullBtn) printCalFullBtn.addEventListener('click', ()=>{
+    setPrintOrientation('landscape');
+    document.body.classList.remove('print-cal-only');
+    window.print();
+  });
   const logoutBtn = document.getElementById('btn-logout');
   if(logoutBtn) logoutBtn.addEventListener('click', ()=>{ if(unsubscribeSnapshot) unsubscribeSnapshot(); fbAuth.signOut(); });
   document.getElementById('file-import').addEventListener('change', importTasks);
@@ -977,7 +1030,7 @@ function renderCalendar(){
     bodyRows += `<div class="cal-hour-label" style="${isWholeHour?'font-weight:600;':'opacity:0.6;'}">${fmtSlot(h)}</div>`;
     days.forEach(d=>{
       const dateStr = isoDate(d);
-      const cellTasks = tasks.filter(t=>t.scheduledDate===dateStr && t.scheduledHour===h);
+      const cellTasks = tasks.filter(t=>t.scheduledDate===dateStr && t.scheduledHour===h && t.status!=='feito');
       const blocksHtml = cellTasks.map(t=>{
         const dur = t.duration || 1;
         const heightPx = Math.max(dur * 2 * HALF - 2, HALF - 2);
@@ -1135,6 +1188,7 @@ async function importTasks(e){
       if(!t.id || existingIds.has(t.id)) t.id = uid();
       tasks.push(t);
     });
+    normalizeTasks();
     await saveTasks();
     render();
     alert('Tarefas importadas com sucesso!');
