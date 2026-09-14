@@ -507,6 +507,7 @@ let viewMode = 'board'; // 'board', 'prazo', 'calendario'
 let editingId = null;
 let selectedForSchedule = null;
 let calendarWeekStart = getMonday(new Date());
+let calendarAutoJumped = false;
 
 function getMonday(d){
   const date = new Date(d);
@@ -807,7 +808,7 @@ function setView(v){
 
 function render(){
   const app = document.getElementById('app');
-  const filtered = tasks.filter(t=> filterStatus==='todas' ? t.status!=='feito' : t.status===filterStatus);
+  const filtered = tasks.filter(t=> filterStatus==='todas' ? (t.status!=='feito' && t.status!=='naofeito') : t.status===filterStatus);
 
   let mainContent;
   if(viewMode === 'prazo'){
@@ -992,6 +993,24 @@ async function duplicateTask(id, keepSchedule){
 }
 
 function renderCalendar(){
+  if(!calendarAutoJumped){
+    calendarAutoJumped = true;
+    const scheduledDates = tasks.filter(t=>t.scheduledDate).map(t=>t.scheduledDate);
+    if(scheduledDates.length){
+      const curWeekDates = Array.from({length:7},(_,i)=>isoDate(addDays(calendarWeekStart,i)));
+      const hasCurrent = scheduledDates.some(d=>curWeekDates.includes(d));
+      if(!hasCurrent){
+        const todayMs = new Date().setHours(0,0,0,0);
+        let nearest = scheduledDates[0];
+        let nearestDiff = Math.abs(new Date(nearest+'T00:00:00') - todayMs);
+        scheduledDates.forEach(d=>{
+          const diff = Math.abs(new Date(d+'T00:00:00') - todayMs);
+          if(diff < nearestDiff){ nearest = d; nearestDiff = diff; }
+        });
+        calendarWeekStart = getMonday(new Date(nearest+'T00:00:00'));
+      }
+    }
+  }
   const SLOTS = [];
   for(let i=7*2; i<=22*2; i++){ SLOTS.push(i/2); }
   const days = Array.from({length:7}, (_,i)=>addDays(calendarWeekStart, i));
@@ -1003,7 +1022,7 @@ function renderCalendar(){
     return String(hh).padStart(2,'0') + ':' + mm;
   }
 
-  const unscheduled = tasks.filter(t=>!t.scheduledDate && t.status!=='feito');
+  const unscheduled = tasks.filter(t=>!t.scheduledDate && t.status!=='feito' && t.status!=='naofeito');
   const sidebarHtml = unscheduled.length ? Object.keys(AREAS).map(areaKey=>{
     const areaTasks = unscheduled.filter(t=>t.area===areaKey);
     if(!areaTasks.length) return '';
@@ -1030,7 +1049,7 @@ function renderCalendar(){
     bodyRows += `<div class="cal-hour-label" style="${isWholeHour?'font-weight:600;':'opacity:0.6;'}">${fmtSlot(h)}</div>`;
     days.forEach(d=>{
       const dateStr = isoDate(d);
-      const cellTasks = tasks.filter(t=>t.scheduledDate===dateStr && t.scheduledHour===h && t.status!=='feito');
+      const cellTasks = tasks.filter(t=>t.scheduledDate===dateStr && t.scheduledHour===h && t.status!=='feito' && t.status!=='naofeito');
       const blocksHtml = cellTasks.map(t=>{
         const dur = t.duration || 1;
         const heightPx = Math.max(dur * 2 * HALF - 2, HALF - 2);
@@ -1049,12 +1068,20 @@ function renderCalendar(){
 
   const rangeLabel = `${days[0].getDate()}/${days[0].getMonth()+1} — ${days[6].getDate()}/${days[6].getMonth()+1}`;
 
+  function countInWeek(weekStart){
+    const wDates = Array.from({length:7},(_,i)=>isoDate(addDays(weekStart,i)));
+    return tasks.filter(t=>t.scheduledDate && wDates.includes(t.scheduledDate)).length;
+  }
+  const prevCount = countInWeek(addDays(calendarWeekStart,-7));
+  const nextCount = countInWeek(addDays(calendarWeekStart,7));
+  const badge = (n)=> n>0 ? ` <span style="background:var(--stamp); color:#fff; border-radius:8px; padding:0 5px; font-size:9px;">${n}</span>` : '';
+
   return `
     <div class="cal-wrap">
       <div class="cal-nav">
-        <button id="cal-prev">← Semana anterior</button>
+        <button id="cal-prev">← Semana anterior${badge(prevCount)}</button>
         <button id="cal-today">Hoje</button>
-        <button id="cal-next">Próxima semana →</button>
+        <button id="cal-next">Próxima semana →${badge(nextCount)}</button>
         <span class="cal-range">${rangeLabel}</span>
       </div>
       <div class="cal-hint">${selectedForSchedule ? 'Tarefa selecionada — clique num horário do calendário pra encaixar.' : 'Clique numa tarefa da lista à esquerda pra selecionar, depois clique no horário desejado. (No computador também dá pra arrastar.)'}</div>
