@@ -417,6 +417,133 @@
     .cal-sidebar{ border-color:#000 !important; background:#fff !important; max-height:none; }
     body.print-cal-only .cal-sidebar{ display:none !important; }
     body.print-cal-only .cal-grid-scroll{ width:100%; }
+
+    .hoje-nav, .hoje-actions, .hoje-add, .hoje-btn{ display:none !important; }
+    .hoje-paper{ box-shadow:none !important; border-color:#999 !important; }
+    .hoje-paper::before{ display:none; }
+    .hoje-area{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+
+  /* ===== aba Hoje (bloco de notas do dia) ===== */
+  .hoje-wrap{ max-width:720px; padding:18px 20px 48px; }
+  .hoje-nav{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .hoje-nav button, .hoje-nav input[type=date], .hoje-select{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase;
+    background:var(--paper-white); border:1px solid var(--ink); color:var(--ink);
+    padding:6px 10px; border-radius:2px; cursor:pointer;
+  }
+  .hoje-select{ max-width:100%; text-transform:none; }
+  .hoje-title{
+    font-family:'Archivo Black', sans-serif; font-size:24px; text-transform:uppercase;
+    letter-spacing:-0.3px; margin:0 0 4px;
+  }
+  .hoje-today-tag{
+    font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:0.5px;
+    color:var(--stamp); border:1.5px solid var(--stamp); border-radius:3px;
+    padding:1px 6px; margin-left:10px; vertical-align:middle; transform:rotate(-3deg); display:inline-block;
+  }
+  .hoje-count{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft); margin-bottom:6px; }
+  .hoje-progress{ height:4px; background:var(--line); margin-bottom:14px; }
+  .hoje-progress > div{ height:100%; background:var(--stamp); transition:width .2s; }
+  .hoje-paper{
+    background:var(--paper-white); border:1px solid var(--line);
+    box-shadow:1px 2px 0 rgba(0,0,0,0.06); position:relative;
+  }
+  .hoje-paper::before{
+    content:''; position:absolute; top:0; bottom:0; left:42px; width:2px;
+    background:rgba(163,43,43,0.28); pointer-events:none;
+  }
+  .hoje-item{
+    display:flex; align-items:flex-start; gap:10px; padding:9px 10px 9px 12px;
+    border-bottom:1px solid #ddd3b5;
+  }
+  .hoje-check{
+    -webkit-appearance:none; appearance:none; flex-shrink:0;
+    width:20px; height:20px; margin:2px 0 0; cursor:pointer;
+    border:2px solid var(--ink); background:var(--paper); border-radius:2px;
+  }
+  .hoje-check:checked{
+    background:var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4.5 10.5l3.5 3.5 7.5-8' fill='none' stroke='%23F5F0E1' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat;
+  }
+  .hoje-main{ flex:1; min-width:0; padding-left:6px; }
+  .hoje-input{
+    width:100%; border:none; outline:none; background:transparent;
+    font-family:'Source Serif 4', serif; font-size:16px; line-height:1.4; color:var(--ink); padding:1px 0;
+  }
+  .hoje-input::placeholder{ color:#a79d80; }
+  .hoje-linked{ font-size:16px; line-height:1.4; cursor:pointer; }
+  .hoje-area{
+    font-family:'IBM Plex Mono', monospace; font-size:8.5px; text-transform:uppercase; letter-spacing:0.3px;
+    color:#fff; padding:2px 5px; border-radius:2px; margin-right:6px; vertical-align:middle;
+  }
+  .hoje-time{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-soft); margin-right:6px;
+  }
+  .hoje-item.done .hoje-input, .hoje-item.done .hoje-linked-text{
+    text-decoration:line-through; color:var(--ink-soft);
+  }
+  .hoje-item.done .hoje-area{ opacity:0.55; }
+  .hoje-note{
+    display:block; width:100%; margin-top:5px; min-height:38px; resize:vertical; outline:none;
+    border:none; border-left:2px solid var(--line); background:var(--paper);
+    font-family:'Source Serif 4', serif; font-style:italic; font-size:14.5px; line-height:1.4;
+    color:var(--ink-soft); padding:5px 8px;
+  }
+  .hoje-btn{
+    background:none; border:none; cursor:pointer; color:var(--ink-soft);
+    font-size:14px; padding:2px 5px; opacity:0.55; line-height:1;
+  }
+  .hoje-btn:hover{ opacity:1; }
+  .hoje-add{ display:flex; gap:8px; align-items:center; padding:10px 12px 10px 44px; }
+  .hoje-add input{
+    flex:1; min-width:0; border:none; border-bottom:1px dashed var(--line); outline:none; background:transparent;
+    font-family:'Source Serif 4', serif; font-size:16px; color:var(--ink); padding:4px 0;
+  }
+  .hoje-add button{
+    font-family:'Archivo Black', sans-serif; font-size:14px; background:var(--ink); color:var(--paper-white);
+    border:none; width:30px; height:30px; border-radius:2px; cursor:pointer;
+  }
+  .hoje-empty{ padding:18px 16px 8px 54px; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft); }
+  .hoje-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+
+  /* ===== layout Hoje + bloco de notas à direita ===== */
+  .hoje-layout{ display:flex; gap:22px; align-items:flex-start; padding-right:20px; }
+  .hoje-layout .hoje-wrap{ flex:1 1 560px; min-width:0; max-width:720px; }
+  .hoje-pad-col{ flex:1 1 380px; min-width:0; padding:18px 0 48px; position:sticky; top:0; }
+  .hoje-pad-head{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;
+    color:var(--ink-soft); margin:6px 0 8px; display:flex; justify-content:space-between; align-items:center;
+  }
+  .hoje-pad-head button{
+    font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase;
+    background:none; border:1px solid var(--line); color:var(--ink-soft); padding:3px 8px; border-radius:2px; cursor:pointer;
+  }
+  .hoje-pad-head button:hover{ border-color:var(--ink); color:var(--ink); }
+  .hoje-pad{
+    display:block; width:100%; min-height:520px; height:calc(100vh - 260px); resize:vertical; outline:none;
+    border:1px solid var(--line); background:var(--paper-white);
+    background-image:repeating-linear-gradient(transparent, transparent 27px, #ddd3b5 27px, #ddd3b5 28px);
+    background-attachment:local;
+    box-shadow:1px 2px 0 rgba(0,0,0,0.06);
+    font-family:'Source Serif 4', serif; font-size:16px; line-height:28px; color:var(--ink);
+    padding:0 14px; border-radius:0;
+  }
+  @media (max-width:1000px){
+    .hoje-layout{ flex-direction:column; gap:0; padding-right:0; }
+    .hoje-layout .hoje-wrap{ max-width:none; width:100%; }
+    .hoje-pad-col{ position:static; width:100%; padding:0 20px 48px; }
+    .hoje-pad{ height:320px; min-height:240px; }
+  }
+
+  /* impressão de uma área só */
+  @media print{
+    body.print-one-area .column{ display:none !important; }
+    body.print-one-area .column.print-this{ display:block !important; }
+    body.print-one-area .board{ display:block !important; }
+    .hoje-layout{ display:block; padding:0; }
+    .hoje-pad-col{ position:static; padding:12px 20px 0; }
+    .hoje-pad{ height:auto; min-height:300px; resize:none; box-shadow:none; border-color:#999; }
+    .hoje-pad-head button{ display:none !important; }
   }
 </style>
 
@@ -509,6 +636,17 @@ let selectedForSchedule = null;
 let calendarWeekStart = getMonday(new Date());
 let calendarAutoJumped = false;
 
+// ----- aba Hoje (bloco de notas do dia) -----
+const NOTES_KEY = 'organizador-tarefas-v1-hoje';
+let dayNotes = {};                 // { 'AAAA-MM-DD': [ {id, text, done, note, taskId} ] }
+let dayPads = {};                  // { 'AAAA-MM-DD': 'texto livre do bloco de notas' }
+const PADS_KEY = 'organizador-tarefas-v1-pads';
+let hojeDate = isoDate(new Date());
+let openNotes = new Set();
+let pendingFocus = null;
+let notesTimer = null;
+let unsubscribeNotes = null;
+
 function getMonday(d){
   const date = new Date(d);
   const day = date.getDay();
@@ -517,7 +655,10 @@ function getMonday(d){
   date.setHours(0,0,0,0);
   return date;
 }
-function isoDate(d){ return d.toISOString().slice(0,10); }
+function isoDate(d){
+  // data LOCAL (toISOString usa UTC e erra o dia à noite no Brasil)
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
 function addDays(d, n){ const r = new Date(d); r.setDate(r.getDate()+n); return r; }
 
 function uid(){ return 't' + Date.now() + Math.random().toString(36).slice(2,7); }
@@ -581,9 +722,66 @@ async function loadTasks(){
   }catch(e){
     tasks = [];
   }
+  await loadNotesLocal();
   if(normalizeTasks()) await saveTasks();
   render();
 }
+
+function normalizeNotes(){
+  if(!dayPads || typeof dayPads !== 'object' || Array.isArray(dayPads)) dayPads = {};
+  Object.keys(dayPads).forEach(d=>{ if(typeof dayPads[d] !== 'string' || !dayPads[d].trim()) delete dayPads[d]; });
+  if(!dayNotes || typeof dayNotes !== 'object' || Array.isArray(dayNotes)) dayNotes = {};
+  Object.keys(dayNotes).forEach(d=>{
+    if(!Array.isArray(dayNotes[d])) delete dayNotes[d];
+  });
+}
+
+async function loadNotesLocal(){
+  try{
+    if(hasClaudeStorage){
+      const res = await window.storage.get('dayNotes', false);
+      dayNotes = res ? JSON.parse(res.value) : {};
+      const rp = await window.storage.get('dayPads', false);
+      dayPads = rp ? JSON.parse(rp.value) : {};
+    } else {
+      const raw = localStorage.getItem(NOTES_KEY);
+      dayNotes = raw ? JSON.parse(raw) : {};
+      const rawp = localStorage.getItem(PADS_KEY);
+      dayPads = rawp ? JSON.parse(rawp) : {};
+    }
+  }catch(e){
+    dayNotes = {};
+    dayPads = {};
+  }
+  normalizeNotes();
+}
+
+async function saveNotes(){
+  try{
+    const clean = JSON.parse(JSON.stringify(dayNotes));
+    const cleanPads = JSON.parse(JSON.stringify(dayPads));
+    if(hasFirebaseConfig && !hasClaudeStorage && currentUser){
+      await fbDb.collection('users').doc(currentUser.uid).collection('data').doc('notes').set({ days: clean, pads: cleanPads });
+    } else if(hasClaudeStorage){
+      await window.storage.set('dayNotes', JSON.stringify(clean), false);
+      await window.storage.set('dayPads', JSON.stringify(cleanPads), false);
+    } else {
+      localStorage.setItem(NOTES_KEY, JSON.stringify(clean));
+      localStorage.setItem(PADS_KEY, JSON.stringify(cleanPads));
+    }
+  }catch(e){
+    console.error('erro ao salvar notas', e);
+  }
+}
+function saveNotesSoon(){
+  clearTimeout(notesTimer);
+  notesTimer = setTimeout(()=>{ notesTimer = null; saveNotes(); }, 600);
+}
+function flushNotes(){
+  if(notesTimer){ clearTimeout(notesTimer); notesTimer = null; saveNotes(); }
+}
+window.addEventListener('pagehide', flushNotes);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushNotes(); });
 
 function attachFirestoreListener(){
   if(unsubscribeSnapshot) unsubscribeSnapshot();
@@ -595,6 +793,20 @@ function attachFirestoreListener(){
     if(changed) saveTasks();
   }, err=>{
     console.error('erro ao sincronizar', err);
+  });
+
+  if(unsubscribeNotes) unsubscribeNotes();
+  const notesRef = fbDb.collection('users').doc(currentUser.uid).collection('data').doc('notes');
+  unsubscribeNotes = notesRef.onSnapshot(snap=>{
+    if(snap.metadata.hasPendingWrites) return; // eco da minha própria escrita
+    dayNotes = (snap.exists && snap.data().days) ? snap.data().days : {};
+    dayPads = (snap.exists && snap.data().pads) ? snap.data().pads : {};
+    normalizeNotes();
+    const ae = document.activeElement;
+    const typing = ae && (ae.classList.contains('hoje-input') || ae.classList.contains('hoje-note') || ae.id==='hoje-new' || ae.id==='hoje-pad');
+    if(viewMode==='hoje' && !typing) render();
+  }, err=>{
+    console.error('erro ao sincronizar notas', err);
   });
 }
 
@@ -729,7 +941,11 @@ function setPrintOrientation(mode){
   const el = document.getElementById('print-orientation');
   if(el) el.textContent = `@page{ size: ${mode}; margin: 10mm; }`;
 }
-window.addEventListener('afterprint', ()=>{ document.body.classList.remove('print-cal-only'); });
+window.addEventListener('afterprint', ()=>{
+  document.body.classList.remove('print-cal-only');
+  document.body.classList.remove('print-one-area');
+  document.querySelectorAll('.column.print-this').forEach(c=>c.classList.remove('print-this'));
+});
 
 function escapeHtml(s){
   return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -802,12 +1018,27 @@ function setFilter(f){
 }
 
 function setView(v){
+  if(viewMode==='hoje' && v!=='hoje'){ cleanBlankItems(); flushNotes(); }
   viewMode = v;
   render();
 }
 
 function render(){
   const app = document.getElementById('app');
+
+  // preserva foco/cursor ao redesenhar a aba Hoje (ex.: sincronização chegando enquanto digita)
+  let restore = null;
+  const ae = document.activeElement;
+  if(viewMode==='hoje' && ae && app.contains(ae)){
+    if(ae.classList.contains('hoje-input') || ae.classList.contains('hoje-note')){
+      restore = { sel: '.' + (ae.classList.contains('hoje-input') ? 'hoje-input' : 'hoje-note') + '[data-id="' + ae.dataset.id + '"]', start: ae.selectionStart, end: ae.selectionEnd };
+    } else if(ae.id === 'hoje-new'){
+      restore = { sel: '#hoje-new', start: ae.selectionStart, end: ae.selectionEnd, value: ae.value };
+    } else if(ae.id === 'hoje-pad'){
+      restore = { sel: '#hoje-pad', start: ae.selectionStart, end: ae.selectionEnd, value: ae.value, scroll: ae.scrollTop };
+    }
+  }
+
   const filtered = tasks.filter(t=> filterStatus==='todas' ? (t.status!=='feito' && t.status!=='naofeito') : t.status===filterStatus);
 
   let mainContent;
@@ -815,6 +1046,8 @@ function render(){
     mainContent = renderDeadlineList(filtered);
   } else if(viewMode === 'calendario'){
     mainContent = renderCalendar();
+  } else if(viewMode === 'hoje'){
+    mainContent = renderHoje();
   } else {
     mainContent = renderBoard(filtered);
   }
@@ -825,12 +1058,13 @@ function render(){
       <div class="sub">Mestrado · Movimento Social · Partido · Vida Pessoal · Outros</div>
     </div>
     <div class="toolbar">
-      ${['todas','afazer','andamento','feito','naofeito'].map(f=>`
+      ${viewMode==='hoje' ? '' : ['todas','afazer','andamento','feito','naofeito'].map(f=>`
         <button class="filter-btn ${filterStatus===f?'active':''}" data-filter="${f}">
           ${f==='todas'?'Todas':statusLabel(f)}
         </button>
       `).join('')}
       <div class="view-toggle">
+        <button class="filter-btn ${viewMode==='hoje'?'active':''}" data-view="hoje">Hoje</button>
         <button class="filter-btn ${viewMode==='board'?'active':''}" data-view="board">Por área</button>
         <button class="filter-btn ${viewMode==='prazo'?'active':''}" data-view="prazo">Por prazo</button>
         <button class="filter-btn ${viewMode==='calendario'?'active':''}" data-view="calendario">Calendário</button>
@@ -842,6 +1076,10 @@ function render(){
         <button class="filter-btn" id="btn-print-cal-only">Imprimir: só calendário</button>
         <button class="filter-btn" id="btn-print-cal-full">Imprimir: calendário + tarefas</button>
       ` : `<button class="filter-btn" id="btn-print">Imprimir / PDF</button>`}
+      ${viewMode==='board' ? `<select class="filter-btn" id="print-area" title="Imprime só a lista de uma área">
+        <option value="">Imprimir só uma área…</option>
+        ${Object.keys(AREAS).map(k=>`<option value="${k}">${AREAS[k].label}</option>`).join('')}
+      </select>` : ''}
       ${(hasFirebaseConfig && !hasClaudeStorage && currentUser) ? '<button class="filter-btn" id="btn-logout">Sair (' + escapeHtml(currentUser.email) + ')</button>' : ''}
       <input type="file" id="file-import" accept="application/json" style="display:none;" />
     </div>
@@ -863,6 +1101,19 @@ function render(){
     document.body.classList.remove('print-cal-only');
     window.print();
   });
+  const printAreaSel = document.getElementById('print-area');
+  if(printAreaSel) printAreaSel.addEventListener('change', ()=>{
+    const k = printAreaSel.value;
+    if(!k) return;
+    printAreaSel.value = '';
+    const col = document.querySelector('.column.col-' + k);
+    if(!col) return;
+    setPrintOrientation('portrait');
+    document.body.classList.remove('print-cal-only');
+    document.body.classList.add('print-one-area');
+    col.classList.add('print-this');
+    window.print();
+  });
   const printCalOnlyBtn = document.getElementById('btn-print-cal-only');
   if(printCalOnlyBtn) printCalOnlyBtn.addEventListener('click', ()=>{
     setPrintOrientation('landscape');
@@ -876,7 +1127,7 @@ function render(){
     window.print();
   });
   const logoutBtn = document.getElementById('btn-logout');
-  if(logoutBtn) logoutBtn.addEventListener('click', ()=>{ if(unsubscribeSnapshot) unsubscribeSnapshot(); fbAuth.signOut(); });
+  if(logoutBtn) logoutBtn.addEventListener('click', ()=>{ if(unsubscribeSnapshot) unsubscribeSnapshot(); if(unsubscribeNotes) unsubscribeNotes(); fbAuth.signOut(); });
   document.getElementById('file-import').addEventListener('change', importTasks);
   document.querySelectorAll('.card-title, .dl-title').forEach(el=>{
     el.addEventListener('click', ()=>openModal(el.dataset.id));
@@ -891,6 +1142,19 @@ function render(){
 
   if(viewMode === 'calendario'){
     wireCalendarEvents();
+  }
+
+  if(viewMode === 'hoje'){
+    wireHojeEvents();
+    if(pendingFocus){
+      applyHojeFocus(pendingFocus);
+      pendingFocus = null;
+    } else if(restore){
+      const el = document.querySelector(restore.sel);
+      if(el && restore.value != null) el.value = restore.value;
+      applyHojeFocus(restore);
+      if(el && restore.scroll != null) el.scrollTop = restore.scroll;
+    }
   }
 }
 
@@ -1128,7 +1392,7 @@ function renderBoard(filtered){
 function renderDeadlineList(filtered){
   const withDue = filtered.filter(t=>t.due).sort((a,b)=> a.due.localeCompare(b.due));
   const withoutDue = filtered.filter(t=>!t.due);
-  const today = new Date().toISOString().slice(0,10);
+  const today = isoDate(new Date());
 
   const rows = withDue.map(t=>{
     const overdue = t.due < today && t.status !== 'feito' && t.status !== 'naofeito';
@@ -1192,8 +1456,299 @@ function cardHtml(t){
   `;
 }
 
+// ================= HOJE (bloco de notas do dia) =================
+function ensureDay(date){ if(!dayNotes[date]) dayNotes[date] = []; return dayNotes[date]; }
+function pruneDay(date){ if(dayNotes[date] && !dayNotes[date].length) delete dayNotes[date]; }
+function newNoteItem(text, taskId){ return { id: uid(), text: text || '', done: false, note: '', taskId: taskId || null }; }
+function shiftIso(iso, n){ return isoDate(addDays(new Date(iso + 'T00:00:00'), n)); }
+function itemTask(it){ return it.taskId ? tasks.find(t=>t.id===it.taskId) : null; }
+function itemDone(it){ const t = itemTask(it); return t ? t.status==='feito' : !!it.done; }
+function findHojeItem(id){ return (dayNotes[hojeDate] || []).find(i=>i.id===id); }
+function fmtHour(h){ return String(Math.floor(h)).padStart(2,'0') + ':' + (h % 1 === 0.5 ? '30' : '00'); }
+
+function cleanBlankItems(){
+  let changed = false;
+  Object.keys(dayNotes).forEach(d=>{
+    const before = dayNotes[d].length;
+    dayNotes[d] = dayNotes[d].filter(it=> it.taskId || (it.text||'').trim() || (it.note||'').trim());
+    if(dayNotes[d].length !== before) changed = true;
+    pruneDay(d);
+  });
+  if(changed) saveNotesSoon();
+}
+
+function hojeOpenTasks(){
+  const inList = new Set((dayNotes[hojeDate] || []).map(i=>i.taskId).filter(Boolean));
+  return tasks.filter(t=> t.status!=='feito' && t.status!=='naofeito' && !inList.has(t.id));
+}
+
+function applyHojeFocus(f){
+  const el = document.querySelector(f.sel);
+  if(!el) return;
+  el.focus();
+  try{
+    if(f.start != null && el.setSelectionRange){ el.setSelectionRange(f.start, f.end != null ? f.end : f.start); }
+    else if(f.pos === 'end' && el.setSelectionRange){ const n = el.value.length; el.setSelectionRange(n, n); }
+  }catch(e){}
+}
+
+function gotoHoje(date){
+  cleanBlankItems();
+  flushNotes();
+  hojeDate = date;
+  render();
+}
+
+function renderHoje(){
+  const items = dayNotes[hojeDate] || [];
+  const d = new Date(hojeDate + 'T00:00:00');
+  const weekday = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][d.getDay()];
+  const isToday = hojeDate === isoDate(new Date());
+  const doneCount = items.filter(itemDone).length;
+  const pending = items.length - doneCount;
+  const pct = items.length ? Math.round(doneCount / items.length * 100) : 0;
+
+  const openTasks = hojeOpenTasks();
+  const scheduledToday = openTasks.filter(t=>t.scheduledDate === hojeDate);
+  const pullGroups = Object.keys(AREAS).map(k=>{
+    const ts = openTasks.filter(t=>t.area === k);
+    if(!ts.length) return '';
+    return '<optgroup label="' + escapeHtml(AREAS[k].label) + '">' + ts.map(t=>{
+      const due = t.due ? ' · até ' + new Date(t.due + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+      return '<option value="' + t.id + '">' + escapeHtml(t.title) + due + '</option>';
+    }).join('') + '</optgroup>';
+  }).join('');
+
+  const rows = items.map(it=>{
+    const t = itemTask(it);
+    const done = itemDone(it);
+    const noteOpen = (it.note && it.note.length) || openNotes.has(it.id);
+    let main;
+    if(t){
+      const area = AREAS[t.area] ? t.area : 'outros';
+      const time = (t.scheduledDate === hojeDate && t.scheduledHour != null) ? '<span class="hoje-time">' + fmtHour(t.scheduledHour) + '</span>' : '';
+      main = '<div class="hoje-linked" data-task="' + t.id + '" title="Abrir a tarefa">'
+        + '<span class="hoje-area" style="background:var(--' + area + ');">' + escapeHtml(AREAS[area].label) + '</span>'
+        + time + '<span class="hoje-linked-text">' + escapeHtml(t.title) + '</span></div>';
+    } else {
+      main = '<input class="hoje-input" data-id="' + it.id + '" value="' + escapeHtml(it.text || '') + '" placeholder="Escreva aqui…" autocomplete="off" />';
+    }
+    return '<div class="hoje-item ' + (done ? 'done' : '') + '" data-id="' + it.id + '">'
+      + '<input type="checkbox" class="hoje-check" data-id="' + it.id + '" ' + (done ? 'checked' : '') + ' aria-label="Marcar como feito" />'
+      + '<div class="hoje-main">' + main
+      + (noteOpen ? '<textarea class="hoje-note" data-id="' + it.id + '" rows="2" placeholder="Anotação…">' + escapeHtml(it.note || '') + '</textarea>' : '')
+      + '</div>'
+      + '<button class="hoje-btn js-hoje-note" data-id="' + it.id + '" title="Anotação">✎</button>'
+      + '<button class="hoje-btn js-hoje-del" data-id="' + it.id + '" title="Tirar da lista do dia">✕</button>'
+      + '</div>';
+  }).join('');
+
+  return '<div class="hoje-layout"><div class="hoje-wrap">'
+    + '<div class="hoje-nav">'
+    +   '<button id="hoje-prev" title="Dia anterior">←</button>'
+    +   '<button id="hoje-today">Hoje</button>'
+    +   '<button id="hoje-next" title="Dia seguinte">→</button>'
+    +   '<input type="date" id="hoje-date" value="' + hojeDate + '" />'
+    + '</div>'
+    + '<h2 class="hoje-title">' + weekday + ', ' + d.getDate() + '/' + (d.getMonth() + 1) + (isToday ? '<span class="hoje-today-tag">hoje</span>' : '') + '</h2>'
+    + '<div class="hoje-count">' + doneCount + ' de ' + items.length + ' feitos</div>'
+    + '<div class="hoje-progress"><div style="width:' + pct + '%;"></div></div>'
+    + '<div class="hoje-paper">'
+    +   (rows || '<div class="hoje-empty">Nada na lista ainda. Escreva o primeiro item abaixo.</div>')
+    +   '<div class="hoje-add"><input id="hoje-new" placeholder="Novo item… (Enter adiciona)" autocomplete="off" /><button id="hoje-add-btn" title="Adicionar">+</button></div>'
+    + '</div>'
+    + '<div class="hoje-actions">'
+    +   (scheduledToday.length ? '<button class="filter-btn" id="hoje-from-cal">Trazer agendadas do dia (' + scheduledToday.length + ')</button>' : '')
+    +   (pullGroups ? '<select id="hoje-pull" class="hoje-select"><option value="">＋ Puxar tarefa cadastrada…</option>' + pullGroups + '</select>' : '')
+    +   (items.length && pending ? '<button class="filter-btn" id="hoje-push">Levar ' + pending + ' pendente' + (pending > 1 ? 's' : '') + ' pro dia seguinte →</button>' : '')
+    + '</div>'
+    + '</div>'
+    + '<div class="hoje-pad-col">'
+    +   '<div class="hoje-pad-head"><span>Bloco de notas · ' + d.getDate() + '/' + (d.getMonth() + 1) + '</span>'
+    +   '<button id="hoje-pad-clear" title="Apagar o rascunho deste dia">Limpar</button></div>'
+    +   '<textarea id="hoje-pad" class="hoje-pad" placeholder="Rascunhe, anote, cole o que quiser aqui…" spellcheck="true">' + escapeHtml(dayPads[hojeDate] || '') + '</textarea>'
+    + '</div>'
+    + '</div>';
+}
+
+function wireHojeEvents(){
+  const g = id => document.getElementById(id);
+  g('hoje-prev').onclick  = ()=>gotoHoje(shiftIso(hojeDate, -1));
+  g('hoje-next').onclick  = ()=>gotoHoje(shiftIso(hojeDate, 1));
+  g('hoje-today').onclick = ()=>gotoHoje(isoDate(new Date()));
+  g('hoje-date').onchange = e=>{ if(e.target.value) gotoHoje(e.target.value); };
+
+  document.querySelectorAll('.hoje-check').forEach(el=>{
+    el.onchange = ()=>toggleHojeItem(el.dataset.id);
+  });
+
+  const pad = g('hoje-pad');
+  if(pad){
+    pad.addEventListener('input', ()=>{
+      if(pad.value.trim()) dayPads[hojeDate] = pad.value; else delete dayPads[hojeDate];
+      saveNotesSoon();
+    });
+    pad.addEventListener('blur', flushNotes);
+  }
+  const padClear = g('hoje-pad-clear');
+  if(padClear) padClear.onclick = ()=>{
+    if(!(dayPads[hojeDate] || '').trim()) return;
+    if(confirm('Apagar o rascunho deste dia?')){
+      delete dayPads[hojeDate];
+      saveNotesSoon();
+      render();
+    }
+  };
+
+  document.querySelectorAll('.hoje-input').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      const it = findHojeItem(el.dataset.id);
+      if(it){ it.text = el.value; saveNotesSoon(); }
+    });
+    el.addEventListener('blur', flushNotes);
+    el.addEventListener('keydown', e=>hojeKeydown(e, el));
+  });
+
+  document.querySelectorAll('.hoje-note').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      const it = findHojeItem(el.dataset.id);
+      if(it){ it.note = el.value; saveNotesSoon(); }
+    });
+    el.addEventListener('blur', ()=>{
+      if(!el.value.trim()) openNotes.delete(el.dataset.id);
+      flushNotes();
+    });
+  });
+
+  document.querySelectorAll('.js-hoje-note').forEach(el=>{
+    el.onclick = ()=>{
+      openNotes.add(el.dataset.id);
+      pendingFocus = { sel: '.hoje-note[data-id="' + el.dataset.id + '"]', pos: 'end' };
+      render();
+    };
+  });
+
+  document.querySelectorAll('.js-hoje-del').forEach(el=>{
+    el.onclick = ()=>{
+      const items = ensureDay(hojeDate);
+      const idx = items.findIndex(i=>i.id === el.dataset.id);
+      if(idx >= 0) items.splice(idx, 1);
+      openNotes.delete(el.dataset.id);
+      pruneDay(hojeDate);
+      saveNotesSoon();
+      render();
+    };
+  });
+
+  document.querySelectorAll('.hoje-linked').forEach(el=>{
+    el.onclick = ()=>openModal(el.dataset.task);
+  });
+
+  const nw = g('hoje-new');
+  function addFromNew(){
+    const v = nw.value.trim();
+    if(!v) return;
+    ensureDay(hojeDate).push(newNoteItem(v));
+    saveNotesSoon();
+    pendingFocus = { sel: '#hoje-new' };
+    render();
+  }
+  nw.addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); addFromNew(); }
+    else if(e.key === 'ArrowUp'){
+      const inputs = document.querySelectorAll('.hoje-input');
+      if(inputs.length){ e.preventDefault(); inputs[inputs.length - 1].focus(); }
+    }
+  });
+  g('hoje-add-btn').onclick = addFromNew;
+
+  const fromCal = g('hoje-from-cal');
+  if(fromCal) fromCal.onclick = ()=>{
+    hojeOpenTasks()
+      .filter(t=>t.scheduledDate === hojeDate)
+      .sort((a,b)=>(a.scheduledHour||0) - (b.scheduledHour||0))
+      .forEach(t=>ensureDay(hojeDate).push(newNoteItem(t.title, t.id)));
+    saveNotesSoon();
+    render();
+  };
+
+  const pull = g('hoje-pull');
+  if(pull) pull.onchange = ()=>{
+    const t = tasks.find(x=>x.id === pull.value);
+    if(!t) return;
+    ensureDay(hojeDate).push(newNoteItem(t.title, t.id));
+    saveNotesSoon();
+    render();
+  };
+
+  const push = g('hoje-push');
+  if(push) push.onclick = ()=>{
+    const next = shiftIso(hojeDate, 1);
+    const cur = ensureDay(hojeDate);
+    const keep = cur.filter(itemDone);
+    const nextItems = ensureDay(next);
+    const nextIds = new Set(nextItems.map(i=>i.taskId).filter(Boolean));
+    const move = cur.filter(i=>!itemDone(i) && !(i.taskId && nextIds.has(i.taskId)));
+    dayNotes[hojeDate] = keep;
+    pruneDay(hojeDate);
+    move.forEach(i=>nextItems.push(i));
+    saveNotesSoon();
+    render();
+  };
+}
+
+function hojeKeydown(e, el){
+  const id = el.dataset.id;
+  const items = ensureDay(hojeDate);
+  const idx = items.findIndex(i=>i.id === id);
+  if(idx < 0) return;
+
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    const ni = newNoteItem('');
+    items.splice(idx + 1, 0, ni);
+    saveNotesSoon();
+    pendingFocus = { sel: '.hoje-input[data-id="' + ni.id + '"]' };
+    render();
+  } else if(e.key === 'Backspace' && el.value === '' && !(items[idx].note || '').trim()){
+    e.preventDefault();
+    items.splice(idx, 1);
+    let focusSel = '#hoje-new';
+    for(let j = idx - 1; j >= 0; j--){
+      if(!items[j].taskId){ focusSel = '.hoje-input[data-id="' + items[j].id + '"]'; break; }
+    }
+    pruneDay(hojeDate);
+    saveNotesSoon();
+    pendingFocus = { sel: focusSel, pos: 'end' };
+    render();
+  } else if(e.key === 'ArrowUp' || e.key === 'ArrowDown'){
+    const inputs = Array.from(document.querySelectorAll('.hoje-input'));
+    const i = inputs.indexOf(el);
+    const target = inputs[i + (e.key === 'ArrowUp' ? -1 : 1)];
+    if(target){ e.preventDefault(); target.focus(); }
+    else if(e.key === 'ArrowDown'){ e.preventDefault(); document.getElementById('hoje-new').focus(); }
+  }
+}
+
+function toggleHojeItem(id){
+  const it = findHojeItem(id);
+  if(!it) return;
+  const t = itemTask(it);
+  if(t){
+    // item ligado a uma tarefa: marcar aqui = marcar a tarefa original
+    t.status = (t.status === 'feito') ? 'afazer' : 'feito';
+    render();
+    saveTasks();
+  } else {
+    it.done = !it.done;
+    render();
+    saveNotesSoon();
+  }
+}
+
 function exportTasks(){
-  const blob = new Blob([JSON.stringify(tasks, null, 2)], {type:'application/json'});
+  cleanBlankItems();
+  const blob = new Blob([JSON.stringify({ versao: 3, tasks, dayNotes, dayPads }, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -1207,8 +1762,17 @@ async function importTasks(e){
   if(!file) return;
   try{
     const text = await file.text();
-    const imported = JSON.parse(text);
-    if(!Array.isArray(imported)) throw new Error('formato inválido');
+    const parsed = JSON.parse(text);
+    let imported, importedNotes = {}, importedPads = {};
+    if(Array.isArray(parsed)){                    // backup antigo: só tarefas
+      imported = parsed;
+    } else if(parsed && Array.isArray(parsed.tasks)){
+      imported = parsed.tasks;
+      importedNotes = parsed.dayNotes || {};
+      importedPads = parsed.dayPads || {};
+    } else {
+      throw new Error('formato inválido');
+    }
     // merge, avoiding duplicate ids
     const existingIds = new Set(tasks.map(t=>t.id));
     imported.forEach(t=>{
@@ -1216,7 +1780,21 @@ async function importTasks(e){
       tasks.push(t);
     });
     normalizeTasks();
+    Object.keys(importedNotes).forEach(day=>{
+      if(!Array.isArray(importedNotes[day])) return;
+      const cur = ensureDay(day);
+      const have = new Set(cur.map(i=>i.id));
+      importedNotes[day].forEach(it=>{ if(it && it.id && !have.has(it.id)) cur.push(it); });
+      pruneDay(day);
+    });
+    Object.keys(importedPads).forEach(day=>{
+      const txt = importedPads[day];
+      if(typeof txt !== 'string' || !txt.trim()) return;
+      if(!(dayPads[day] || '').trim()) dayPads[day] = txt;
+      else if(dayPads[day] !== txt) dayPads[day] += '\n\n--- importado ---\n' + txt;
+    });
     await saveTasks();
+    await saveNotes();
     render();
     alert('Tarefas importadas com sucesso!');
   }catch(err){
