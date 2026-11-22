@@ -237,6 +237,20 @@ html[data-color=bold] .blk.done .bck{background:#fff;color:var(--ac);border-colo
 .clegend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-size:12px;color:var(--muted)}
 .clegend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
 /* ---------- Etapas ---------- */
+.sli-wrap{margin-top:6px;display:flex;flex-direction:column;gap:2px}
+.sli{display:flex;align-items:center;gap:9px;font-size:14px;min-height:32px}
+.sli .mck{flex:none;width:24px;height:24px;border-radius:7px;border:2px solid var(--line2);background:var(--surface);color:transparent;padding:0;display:flex;align-items:center;justify-content:center}
+.sli .mck svg{width:14px;height:14px}
+.sli .mck:hover{border-color:var(--ac)}
+.sli.done .mck{background:var(--ac);border-color:var(--ac);color:#fff}
+.sli.done .slt{text-decoration:line-through;color:var(--muted)}
+.sli .slt{flex:1;min-width:0}
+.sli .sld{font-size:12px;color:var(--muted);white-space:nowrap}
+.stfold{border:0;background:none;color:var(--accent);font-size:12.5px;font-weight:700;padding:0 0 0 10px}
+.task.step .tt{font-size:15px}
+.strow .iconbtn{width:32px;height:32px;font-size:16px;flex:none}
+.fld .strow .std{width:auto;flex:0 1 150px;min-width:130px;min-height:36px;padding:6px 8px;font-size:15px}
+.strow .std{padding:6px 8px;border:1px solid var(--line2);border-radius:9px;background:var(--surface);font-size:15px;min-height:36px}
 .stp{margin-top:7px}
 .stbar{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
 .stbar i{display:block;height:100%;background:var(--ac,var(--accent));border-radius:99px}
@@ -708,10 +722,14 @@ function stepInfo(t,dueOverride){
   const over=!!(due&&due<today);
   const days=(due&&!over)?Math.max(1,diffDays(due,today)+1):null;
   const perDay=(days&&remMin)?remMin/days:null;
-  const sug={};
-  if(days&&rem.length){
-    if(perDay){ let cum=0; rem.forEach(s=>{ sug[s.id]=addDays(today,Math.min(days-1,Math.max(0,Math.floor(cum/perDay+0.001)))); cum+=s.est||0; }); }
-    else rem.forEach((s,i)=>{ sug[s.id]=addDays(today,Math.min(days-1,Math.floor(i*days/rem.length))); });
+  const sug={}, after={};
+  rem.forEach(s=>{ if(s.date){ sug[s.id]=s.date; if(due&&s.date>due) after[s.id]=1; } });
+  const free=rem.filter(s=>!s.date);
+  if(over) free.forEach(s=>{ sug[s.id]=today; });
+  else if(days&&free.length){
+    const freeMin=free.reduce((a,s)=>a+(s.est||0),0), pf=freeMin?freeMin/days:null;
+    if(pf){ let cum=0; free.forEach(s=>{ sug[s.id]=addDays(today,Math.min(days-1,Math.max(0,Math.floor(cum/pf+0.001)))); cum+=s.est||0; }); }
+    else free.forEach((s,i)=>{ sug[s.id]=addDays(today,Math.min(days-1,Math.floor(i*days/free.length))); });
   }
   const r15=m=>Math.max(15,Math.round(m/15)*15);
   let tone='', txt;
@@ -721,14 +739,42 @@ function stepInfo(t,dueOverride){
     if(over){ txt+=' · prazo vencido'; tone='late'; }
     else if(days){ txt+=' · '+days+(days===1?' dia':' dias'); if(perDay){ txt+=' → ~'+fmtDur(r15(perDay))+'/dia'; tone=perDay>240?'late':perDay>150?'soon':''; } }
   }
-  return {done,total:st.length,rem,remMin,days,perDay,sug,txt,tone,over,next:rem[0]||null};
+  return {done,total:st.length,rem,remMin,days,perDay,sug,after,txt,tone,over,next:rem[0]||null};
+}
+UI.stClosed={};
+function daySteps(day){
+  const today=todayISO(), out=[];
+  Object.values(S.tasks).forEach(t=>{
+    if(t.archived||!t.steps||!t.steps.length) return;
+    const si=stepInfo(t);
+    t.steps.forEach(s=>{
+      if(s.taskId && S.tasks[s.taskId]) return;
+      if(s.done){ if(s.doneAt && iso(new Date(s.doneAt))===day) out.push({t,s,eff:day,late:false}); return; }
+      if(t.done) return;
+      const eff=si.sug[s.id]; if(!eff) return;
+      if(eff===day || (day===today && eff<today)) out.push({t,s,eff,late:eff<today});
+    });
+  });
+  return out;
+}
+function stepRow(x){
+  const a=areaOf(x.t.area), s=x.s;
+  return '<div class="task step'+(s.done?' done':'')+'" style="--ac:'+esc(a.color)+'"><button class="ck" data-act="step-toggle" data-id="'+x.t.id+'" data-sid="'+s.id+'" aria-label="Concluir etapa">'+ICON.check+'</button>'
+   +'<div class="tb" data-act="edit" data-id="'+x.t.id+'"><div class="tt">'+esc(s.text)+'</div><div class="meta"><span class="ad"><i></i>'+esc(x.t.title)+'</span>'+(s.est?'<span>'+fmtDur(s.est)+'</span>':'')+(x.late?'<span class="late">atrasada</span>':'')+(x.t.due&&!s.done?dueTag(x.t.due):'')+'</div></div>'
+   +(s.done?'':'<button class="btn sm" data-act="step-tom" data-id="'+x.t.id+'" data-sid="'+s.id+'" style="align-self:center;margin-right:4px">Amanhã</button>')+'</div>';
 }
 function dayWord(d){ return relDay(d)?relDay(d).toLowerCase():fmtShort(d); }
 function stepsBlock(t){
   const si=stepInfo(t); if(!si) return '';
-  const pct=Math.round(si.done/si.total*100);
-  const nx=(!t.done&&si.next)?'<div class="stx">Próxima: <b>'+esc(si.next.text)+'</b>'+(si.sug[si.next.id]?' · '+dayWord(si.sug[si.next.id]):'')+'</div>':'';
-  return '<div class="stp"><div class="stbar"><i style="width:'+pct+'%"></i></div><div class="stx '+si.tone+'">'+esc(si.txt)+'</div>'+nx+'</div>';
+  const pct=Math.round(si.done/si.total*100), open=!UI.stClosed[t.id];
+  let h='<div class="stp"><div class="stbar"><i style="width:'+pct+'%"></i></div><div class="stx '+si.tone+'">'+esc(si.txt)
+    +'<button class="stfold" data-act="st-fold" data-id="'+t.id+'">'+(open?'▾ etapas':'▸ etapas')+'</button></div>';
+  if(open) h+='<div class="sli-wrap">'+t.steps.map(s=>{
+    const d=s.done?null:si.sug[s.id];
+    return '<div class="sli'+(s.done?' done':'')+'"><button class="mck" data-act="step-toggle" data-id="'+t.id+'" data-sid="'+s.id+'" aria-label="Concluir etapa">'+ICON.check+'</button>'
+      +'<span class="slt">'+esc(s.text)+'</span><span class="sld">'+(s.est?fmtDur(s.est):'')+(d?(s.est?' · ':'')+dayWord(d):'')+'</span></div>';
+  }).join('')+'</div>';
+  return h+'</div>';
 }
 function taskCard(t,o){
   o=o||{};
@@ -865,14 +911,15 @@ function renderHoje(v){
   $$('#hj-seg button').forEach(b=>b.classList.toggle('on',b.dataset.m===UI.padMode));
   const dayTasks=Object.values(S.tasks).filter(t=>t.date===day && !t.archived)
     .sort((a,b)=>(a.time==null)-(b.time==null) || (a.time||0)-(b.time||0) || a.created-b.created);
-  const nDone=dayTasks.filter(t=>t.done).length, pct=dayTasks.length?Math.round(nDone/dayTasks.length*100):0;
+  const dayIds=new Set(dayTasks.map(t=>t.id)), dSteps=daySteps(day).filter(x=>!dayIds.has(x.t.id)), tot=dayTasks.length+dSteps.length;
+  const nDone=dayTasks.filter(t=>t.done).length+dSteps.filter(x=>x.s.done).length, pct=tot?Math.round(nDone/tot*100):0;
   const rel=relDay(day), d=parseD(day);
   $('#hj-head').innerHTML='<div class="pagehead"><div class="daynav"><button class="iconbtn" data-act="day-prev" aria-label="Dia anterior">‹</button>'
     +'<div class="lbl">'+(rel?rel+' · ':'')+'<span class="'+(rel?'muted':'')+'" style="font-weight:'+(rel?600:800)+'">'+WDL[d.getDay()]+', '+d.getDate()+' de '+MN[d.getMonth()]+'</span></div>'
     +'<button class="iconbtn" data-act="day-next" aria-label="Próximo dia">›</button></div>'
     +(day!==today?'<button class="btn sm" data-act="day-today">Hoje</button>':'')+'</div>'
-    +'<div class="prog" title="'+nDone+' de '+dayTasks.length+' feitas"><i style="width:'+pct+'%"></i></div>'
-    +'<div class="small muted" style="margin-top:4px">'+(dayTasks.length?nDone+' de '+dayTasks.length+' feitas':'Dia livre por enquanto')+'</div>';
+    +'<div class="prog" title="'+nDone+' de '+tot+' feitas"><i style="width:'+pct+'%"></i></div>'
+    +'<div class="small muted" style="margin-top:4px">'+(tot?nDone+' de '+tot+' feitas':'Dia livre por enquanto')+'</div>';
   let h='';
   if(day===today){
     const over=openTasks().filter(t=>t.date&&t.date<today).sort((a,b)=>a.date.localeCompare(b.date)||(a.time||0)-(b.time||0));
@@ -893,8 +940,9 @@ function renderHoje(v){
     if(oldOver) h+='<div style="margin-top:10px"><button class="btn sm" data-act="old-over">'+oldOver+(oldOver===1?' prazo vencido':' prazos vencidos')+' há mais de 14 dias · ver em Áreas →</button></div>';
   }
   h+=sec(day===today?'Para hoje':'Neste dia',dayTasks.length);
-  h+=dayTasks.length?'<div class="tl">'+dayTasks.map(t=>taskCard(t)).join('')+'</div>'
-    :'<div class="empty">Nada marcado para este dia.<br><span class="small">Adicione acima, ou puxe algo da aba Áreas.</span></div>';
+  if(dayTasks.length) h+='<div class="tl">'+dayTasks.map(t=>taskCard(t)).join('')+'</div>';
+  else if(!dSteps.length) h+='<div class="empty">Nada marcado para este dia.<br><span class="small">Adicione acima, ou puxe algo da aba Áreas.</span></div>';
+  if(dSteps.length) h+=sec('Etapas de trabalhos',dSteps.length)+'<div class="tl">'+dSteps.map(stepRow).join('')+'</div>';
   $('#hj-list').innerHTML=h;
 }
 function quickAdd(areaSel,date){
@@ -944,13 +992,17 @@ function openEditor(id,preset){
 function stepTask(s){ return s.taskId&&S.tasks[s.taskId]?S.tasks[s.taskId]:null; }
 function renderSteps(){
   const box=$('#ed-steps'); if(!box||!EDIT||!EDIT.t) return;
-  const t=EDIT.t, si=stepInfo(t,$('#ed-due')?($('#ed-due').value||null):t.due);
+  const t=EDIT.t;
   box.innerHTML=(t.steps||[]).map((s,i)=>{
     const lt=stepTask(s);
     return '<div class="strow"><input type="checkbox" class="stck" data-act="st-ck" data-i="'+i+'"'+(s.done?' checked':'')+'>'
       +'<input type="text" class="stt" data-st="text" data-i="'+i+'" value="'+esc(s.text)+'" placeholder="ex.: Escrever introdução" autocomplete="off">'
+      +'<button type="button" class="iconbtn" data-act="st-up" data-i="'+i+'" aria-label="Subir etapa"'+(i===0?' disabled style="opacity:.3"':'')+'>↑</button>'
+      +'<button type="button" class="iconbtn" data-act="st-down" data-i="'+i+'" aria-label="Descer etapa"'+(i===t.steps.length-1?' disabled style="opacity:.3"':'')+'>↓</button>'
       +'<button type="button" class="iconbtn" data-act="st-del" data-i="'+i+'" aria-label="Remover etapa">✕</button>'
-      +'<div class="stsub"><input type="number" class="ste" data-st="est" data-i="'+i+'" min="0" step="0.5" inputmode="decimal" placeholder="h" value="'+(s.est?(s.est/60):'')+'"><span class="small muted">horas</span>'
+      +'<div class="stsub"><input type="number" class="ste" data-st="est" data-i="'+i+'" min="0" step="0.5" inputmode="decimal" placeholder="h" value="'+(s.est?(s.est/60):'')+'"><span class="small muted">h</span>'
+      +'<input type="date" class="std" data-st="date" data-i="'+i+'" value="'+(s.date||'')+'" title="Dia desta etapa (vale mais que a sugestão)">'
+      +(s.date?'<button type="button" class="btn sm" data-act="st-auto" data-i="'+i+'">auto</button>':'')
       +'<span class="small stsug" data-sid="'+s.id+'"></span>'
       +(lt?'<span class="small" style="color:var(--accent)">📅 '+(lt.date?fmtShort(lt.date)+(lt.time!=null?' '+fmtT(lt.time):''):'sem dia')+'</span>':'<button type="button" class="btn sm" data-act="st-sched" data-i="'+i+'">Agendar</button>')
       +'</div></div>';
@@ -960,8 +1012,13 @@ function renderSteps(){
 function updateStepInfo(){
   if(!EDIT||!EDIT.t) return;
   const t=EDIT.t, si=stepInfo(t,$('#ed-due')?($('#ed-due').value||null):t.due), box=$('#ed-stinfo'); if(!box) return;
-  $$('.stsug').forEach(el=>{ const d=si&&si.sug[el.dataset.sid]; el.textContent=d?'→ '+dayWord(d):''; });
-  if(!si){ box.innerHTML='<span class="muted">Divida o trabalho em passos e estime as horas. Com um prazo final, o app calcula o ritmo por dia.</span>'; return; }
+  $$('.stsug').forEach(el=>{
+    const sid=el.dataset.sid, st=(t.steps||[]).find(x=>x.id===sid); if(!st||!si) { el.textContent=''; return; }
+    if(st.done){ el.textContent=''; return; }
+    if(st.date){ el.textContent=si.after[sid]?'⚠ depois do prazo':''; el.style.color='var(--danger)'; }
+    else { const d=si.sug[sid]; el.textContent=d?'→ '+dayWord(d):''; el.style.color=''; }
+  });
+  if(!si){ box.innerHTML='<span class="muted">Divida o trabalho em passos e estime as horas. Com um prazo final, o app calcula o ritmo por dia. Você pode fixar o dia de cada etapa.</span>'; return; }
   const tn={late:'var(--danger)',soon:'var(--warn)',ok:'var(--ok)'}[si.tone]||'var(--muted)';
   box.innerHTML='<b style="color:'+tn+'">'+esc(si.txt)+'</b>'+((!$('#ed-due').value&&si.rem.length)?'<div class="muted">Defina o “Prazo final” para ver o ritmo e a sugestão de dias.</div>':'');
 }
@@ -1016,7 +1073,7 @@ function toggleDone(id){
     if(t.spawn && S.tasks[t.spawn] && !S.tasks[t.spawn].done){ delete S.tasks[t.spawn]; touch('tasks',t.spawn); }
     t.spawn=null;
   }
-  Object.values(S.tasks).forEach(p=>{ if(p.steps&&p.steps.some(s=>s.taskId===id)){ p.steps.forEach(s=>{ if(s.taskId===id) s.done=t.done; }); touch('tasks',p.id); } });
+  Object.values(S.tasks).forEach(p=>{ if(p.steps&&p.steps.some(s=>s.taskId===id)){ p.steps.forEach(s=>{ if(s.taskId===id){ s.done=t.done; s.doneAt=t.done?Date.now():null; } }); touch('tasks',p.id); } });
   touch('tasks',id);
   render();
   if(t.done && t.repeat) toast('Feita! A próxima já está na semana que vem.');
@@ -1320,7 +1377,7 @@ document.addEventListener('input',e=>{
   if(e.target.dataset && e.target.dataset.st && EDIT && EDIT.t){
     const s=EDIT.t.steps[+e.target.dataset.i]; if(s){
       if(e.target.dataset.st==='text') s.text=e.target.value;
-      else { const v=parseFloat(String(e.target.value).replace(',','.')); s.est=(isFinite(v)&&v>0)?Math.round(v*60):null; }
+      else if(e.target.dataset.st==='est'){ const v=parseFloat(String(e.target.value).replace(',','.')); s.est=(isFinite(v)&&v>0)?Math.round(v*60):null; }
       updateStepInfo();
     }
   }
@@ -1482,6 +1539,24 @@ const ACT = {
   retri:()=>{ const today=todayISO(); let n=0; openTasks().forEach(t=>{ if(t.date&&t.date<today){ t.tri=1; touch('tasks',t.id); n++; } }); closeSheet(); if(n){ UI.triage=true; render(); } else toast('Nenhuma tarefa atrasada. 👏'); },
   'ed-close':()=>{ EDIT=null; closeSheet(); },
   'ed-area':el=>{ EDIT.t.area=el.dataset.a; $$('#ed-areas .achip').forEach(b=>b.classList.toggle('on',b===el)); renderTagChips(); },
+  'step-toggle':el=>{
+    const t=S.tasks[el.dataset.id], s=t&&(t.steps||[]).find(x=>x.id===el.dataset.sid); if(!s) return;
+    const lt=stepTask(s), ids=[t.id].concat(lt?[lt.id]:[]);
+    withUndo(ids, s.done?'Etapa reaberta':'Etapa concluída', ()=>{
+      s.done=!s.done; s.doneAt=s.done?Date.now():null;
+      if(lt){ lt.done=s.done; lt.doneAt=s.doneAt; touch('tasks',lt.id); }
+      touch('tasks',t.id);
+    });
+  },
+  'step-tom':el=>{
+    const t=S.tasks[el.dataset.id], s=t&&(t.steps||[]).find(x=>x.id===el.dataset.sid); if(!s) return;
+    const base=(UI.tab==='hoje'&&UI.day>todayISO())?UI.day:todayISO();
+    withUndo([t.id],'Etapa movida para amanhã',()=>{ s.date=addDays(base,1); touch('tasks',t.id); });
+  },
+  'st-fold':(el,id)=>{ UI.stClosed[id]=!UI.stClosed[id]; render(); },
+  'st-up':el=>{ const a=EDIT.t.steps, i=+el.dataset.i; if(i>0){ [a[i-1],a[i]]=[a[i],a[i-1]]; renderSteps(); } },
+  'st-down':el=>{ const a=EDIT.t.steps, i=+el.dataset.i; if(i<a.length-1){ [a[i+1],a[i]]=[a[i],a[i+1]]; renderSteps(); } },
+  'st-auto':el=>{ EDIT.t.steps[+el.dataset.i].date=null; renderSteps(); },
   'st-add':()=>{ const t=EDIT.t; t.steps=t.steps||[]; t.steps.push({id:uid(),text:'',est:null,done:false}); renderSteps(); const ins=$$('.stt'); if(ins.length) ins[ins.length-1].focus(); },
   'st-del':el=>{ EDIT.t.steps.splice(+el.dataset.i,1); renderSteps(); },
   'st-ck':el=>{ EDIT.t.steps[+el.dataset.i].done=el.checked; updateStepInfo(); },
@@ -1539,7 +1614,10 @@ document.addEventListener('click',e=>{
   e.stopPropagation&&0;
 });
 document.addEventListener('mousedown',e=>{ if(e.target.closest('.padtools button')) e.preventDefault(); });
-document.addEventListener('change',e=>{ if(e.target.id==='ed-due'&&EDIT&&EDIT.t) updateStepInfo(); });
+document.addEventListener('change',e=>{
+  if(e.target.id==='ed-due'&&EDIT&&EDIT.t) updateStepInfo();
+  if(e.target.dataset&&e.target.dataset.st==='date'&&EDIT&&EDIT.t){ EDIT.t.steps[+e.target.dataset.i].date=e.target.value||null; renderSteps(); }
+});
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){ closeMenu(); if($('#overlay').children.length){ EDIT=null; closeSheet(); } }
   if(e.key==='Enter' && e.target.id==='qa-input'){ e.preventDefault(); ACT.qa(); }
