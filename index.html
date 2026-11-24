@@ -346,6 +346,24 @@ html[data-color=bold] .blk.done .bck{background:#fff;color:var(--ac);border-colo
 html[data-color=bold] .pitem{background:color-mix(in srgb,var(--ac) 24%,var(--surface))}
 @media (max-width:859px){.hoje-grid[data-pm=pad] .listcol{display:none}.hoje-grid[data-pm=list] .padcol{display:none}}
 .blk .rz{touch-action:none}
+/* ---- lite: mês, etiquetas ---- */
+.mwrap{padding:8px;margin-top:8px}
+.mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.mhead div{text-align:center;font-size:12px;font-weight:700;color:var(--muted);padding:4px 0;text-transform:uppercase}
+.mcell{min-height:64px;border:1px solid var(--line);border-radius:10px;padding:4px;background:var(--surface);cursor:pointer;overflow:hidden;display:flex;flex-direction:column;gap:2px}
+.mcell.out{opacity:.45}
+.mcell.today{border-color:var(--accent-x);box-shadow:inset 0 0 0 1px var(--accent-x)}
+.mcell.sel{background:color-mix(in srgb,var(--accent-x) 12%,var(--surface))}
+.mn{font-size:12.5px;font-weight:700}
+.mcell.today .mn{color:var(--accent-x)}
+.mchips{display:none;flex-direction:column;gap:2px}
+.mchip{font-size:11.5px;line-height:1.25;padding:1px 5px;border-radius:5px;border-left:3px solid var(--ac);background:color-mix(in srgb,var(--ac) 14%,var(--surface));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mchip.done{text-decoration:line-through;opacity:.55}
+.mmore{font-size:11px;color:var(--muted);padding-left:4px}
+.mdots{display:flex;flex-wrap:wrap;gap:3px;margin-top:auto}
+.mdots i{width:7px;height:7px;border-radius:50%;display:block}
+@media (min-width:860px){ .mcell{min-height:104px} .mchips{display:flex} .mdots{display:none} }
+.wk-top .seg{margin-left:auto}
 </style>
 </head>
 <body>
@@ -418,7 +436,7 @@ const cmpStr = (a,b)=>String(a).localeCompare(String(b),'pt-BR');
 
 /* ====================== STATE ====================== */
 let S = {tasks:{}, areas:{}, pads:{}, reviews:{}, settings:{}};
-const UI = {tab:'hoje', day:todayISO(), weekStart:mondayOf(todayISO()), weekDay:todayISO(), area:'*', tag:null, pick:null,
+const UI = {wkMode:'week', monthStart:todayISO().slice(0,8)+'01', monthSel:todayISO(), tab:'hoje', day:todayISO(), weekStart:mondayOf(todayISO()), weekDay:todayISO(), area:'*', tag:null, pick:null,
             padMode:'list', revWeek:mondayOf(todayISO()), qaArea:'mestrado', fitOpen:false, triage:false};
 let fb=null, db=null, auth=null, user=null, ref=null, unsub=null, localOnly=false, booted=false, syncState='';
 const dirty = {tasks:new Set(), areas:new Set(), pads:new Set(), reviews:new Set(), settings:false};
@@ -964,7 +982,7 @@ let EDIT=null;
 function openEditor(id,preset){
   const isNew=!id;
   const base=isNew?newTask(Object.assign({area:(UI.tab==='areas'&&UI.area!=='*'&&S.areas[UI.area])?UI.area:(S.areas[UI.qaArea]?UI.qaArea:areaList()[0].id),
-    date:UI.tab==='hoje'?UI.day:null},preset||{})):clone(S.tasks[id]);
+    date:UI.tab==='hoje'?UI.day:(UI.tab==='semana'&&UI.wkMode==='month'?UI.monthSel:null)},preset||{})):clone(S.tasks[id]);
   if(!base) return;
   EDIT={t:base,isNew};
   const t=base;
@@ -1118,7 +1136,37 @@ function layoutDay(items){
   return out;
 }
 function weekDays(ws){ return [0,1,2,3,4,5,6].map(i=>addDays(ws,i)); }
+/* ====================== MÊS ====================== */
+const MNL=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const segMode=m=>'<div class="seg"><button data-act="wk-mode" data-m="week" class="'+(m==='week'?'on':'')+'">Semana</button><button data-act="wk-mode" data-m="month" class="'+(m==='month'?'on':'')+'">Mês</button></div>';
+function renderMonth(v){
+  v.dataset.view='semana'; v.dataset.ws='month';
+  const today=todayISO(), ms=UI.monthStart, d0=parseD(ms);
+  const lastDay=iso(new Date(d0.getFullYear(),d0.getMonth()+1,0));
+  const gs=mondayOf(ms), ge=addDays(mondayOf(lastDay),6), n=diffDays(ge,gs)+1;
+  const by={};
+  Object.values(S.tasks).forEach(t=>{ if(t.date&&!t.archived&&t.date>=gs&&t.date<=ge) (by[t.date]=by[t.date]||[]).push(t); });
+  Object.values(by).forEach(l=>l.sort((a,b)=>(a.time==null)-(b.time==null)||(a.time||0)-(b.time||0)||a.created-b.created));
+  let h='<div class="wk-top"><button class="iconbtn" data-act="m-prev" aria-label="Mês anterior">‹</button><div class="lbl" style="text-transform:capitalize">'+MNL[d0.getMonth()]+' '+d0.getFullYear()+'</div><button class="iconbtn" data-act="m-next" aria-label="Próximo mês">›</button>'
+    +segMode('month')+'<button class="btn sm" data-act="m-today">Hoje</button></div>';
+  h+='<div class="card mwrap"><div class="mgrid mhead">'+['seg','ter','qua','qui','sex','sáb','dom'].map(x=>'<div>'+x+'</div>').join('')+'</div><div class="mgrid">';
+  for(let i=0;i<n;i++){
+    const d=addDays(gs,i), l=by[d]||[], dt=parseD(d);
+    const cls='mcell'+(d.slice(0,7)!==ms.slice(0,7)?' out':'')+(d===today?' today':'')+(d===UI.monthSel?' sel':'');
+    h+='<div class="'+cls+'" data-act="m-sel" data-d="'+d+'"><div class="mn">'+dt.getDate()+'</div>'
+      +'<div class="mchips">'+l.slice(0,3).map(t=>'<div class="mchip'+(t.done?' done':'')+'" style="--ac:'+esc(areaOf(t.area).color)+'" data-act="edit" data-id="'+t.id+'">'+(t.time!=null?'<b>'+fmtT(t.time)+'</b> ':'')+esc(t.title)+'</div>').join('')+(l.length>3?'<div class="mmore">+'+(l.length-3)+' mais</div>':'')+'</div>'
+      +'<div class="mdots">'+l.slice(0,6).map(t=>'<i style="background:'+esc(areaOf(t.area).color)+(t.done?';opacity:.35':'')+'"></i>').join('')+'</div></div>';
+  }
+  h+='</div></div>';
+  const sel=UI.monthSel, sl=Object.values(S.tasks).filter(t=>t.date===sel&&!t.archived).sort((a,b)=>(a.time==null)-(b.time==null)||(a.time||0)-(b.time||0)||a.created-b.created);
+  h+=sec((relDay(sel)?relDay(sel)+' · ':'')+fmtShort(sel),sl.length,'<button class="btn sm pri" data-act="new">+ Tarefa</button>')
+    +(sl.length?'<div class="tl">'+sl.map(t=>taskCard(t)).join('')+'</div>':'<div class="empty">Nenhuma tarefa neste dia.</div>');
+  v.innerHTML=h;
+}
+
+const firstOfMonth=d=>d.slice(0,8)+'01';
 function renderSemana(v){
+  if(UI.wkMode==='month') return renderMonth(v);
   const wide=innerWidth>=860, H=hh(), today=todayISO();
   const ws=UI.weekStart, all=weekDays(ws);
   if(!all.includes(UI.weekDay)) UI.weekDay=all.includes(today)?today:ws;
@@ -1132,7 +1180,7 @@ function renderSemana(v){
   const d0=parseD(ws), d6=parseD(all[6]);
   const lbl=d0.getDate()+' '+MN[d0.getMonth()]+' – '+d6.getDate()+' '+MN[d6.getMonth()]+(d0.getFullYear()!==new Date().getFullYear()?' '+d0.getFullYear():'');
   let h='<div class="wk-top"><button class="iconbtn" data-act="wk-prev" aria-label="Semana anterior">‹</button><div class="lbl">'+lbl+'</div><button class="iconbtn" data-act="wk-next" aria-label="Próxima semana">›</button>'
-    +'<button class="btn sm" data-act="wk-today">Hoje</button><button class="btn sm" data-act="print-week">Imprimir</button></div>';
+    +segMode('week')+'<button class="btn sm" data-act="wk-today">Hoje</button><button class="btn sm" data-act="print-week">Imprimir</button></div>';
   if(!wide){
     h+='<div class="daypills">'+all.map(d=>{const dt=parseD(d);return '<button data-act="wk-day" data-d="'+d+'" class="'+(d===UI.weekDay?'on ':'')+(d===today?'today':'')+'">'+WD[dt.getDay()]+'<b>'+dt.getDate()+'</b></button>';}).join('')+'</div>';
   }
@@ -1518,13 +1566,18 @@ const ACT = {
   qa:()=>{ if(UI.tab==='hoje') quickAdd(UI.qaArea,UI.day); else quickAdd(UI.area==='*'?UI.qaArea:UI.area,null); },
   'wk-prev':()=>{ UI.weekStart=addDays(UI.weekStart,-7); UI.weekDay=UI.weekStart; render(); },
   'wk-next':()=>{ UI.weekStart=addDays(UI.weekStart,7); UI.weekDay=UI.weekStart; render(); },
+  'wk-mode':el=>{ UI.wkMode=el.dataset.m; if(UI.wkMode==='month') UI.monthStart=firstOfMonth(UI.monthSel); render(); },
+  'm-prev':()=>{ const d=parseD(UI.monthStart); UI.monthStart=iso(new Date(d.getFullYear(),d.getMonth()-1,1)); UI.monthSel=UI.monthStart; render(); },
+  'm-next':()=>{ const d=parseD(UI.monthStart); UI.monthStart=iso(new Date(d.getFullYear(),d.getMonth()+1,1)); UI.monthSel=UI.monthStart; render(); },
+  'm-today':()=>{ UI.monthStart=firstOfMonth(todayISO()); UI.monthSel=todayISO(); render(); },
+  'm-sel':el=>{ UI.monthSel=el.dataset.d; UI.monthStart=firstOfMonth(UI.monthSel); render(); },
   'wk-today':()=>{ UI.weekStart=mondayOf(todayISO()); UI.weekDay=todayISO(); render(); },
   'wk-day':el=>{ UI.weekDay=el.dataset.d; render(); },
   pick:(el,id)=>{ UI.pick=(UI.pick===id)?null:id; render(); },
   'pick-cancel':()=>{ UI.pick=null; render(); },
   'pick-edit':()=>{ const id=UI.pick; UI.pick=null; if(id) openEditor(id); },
   'fit-toggle':()=>{ UI.fitOpen=!UI.fitOpen; render(); },
-  'print-week':()=>printWeek(), 'area-print':()=>printArea(),
+  'print-week':()=>{ UI.wkMode='week'; printWeek(); }, 'area-print':()=>printArea(),
   'area-sel':el=>{ UI.area=el.dataset.a; UI.tag=null; render(); },
   'tag-sel':el=>{ UI.tag=(UI.tag===el.dataset.tag)?null:el.dataset.tag; render(); },
   'area-new':()=>openAreaEditor(null), 'area-edit':()=>openAreaEditor(UI.area),
@@ -1632,7 +1685,7 @@ document.addEventListener('paste',e=>{
   }
 });
 window.addEventListener('resize',()=>{ clearTimeout(window.__rz); window.__rz=setTimeout(()=>{ if(booted&&!userIsBusy()) render(); },200); });
-setInterval(()=>{ if(booted && UI.tab==='semana' && !userIsBusy() && !drag) render(); },5*60*1000);
+setInterval(()=>{ if(booted && UI.tab==='semana' && UI.wkMode==='week' && !userIsBusy() && !drag) render(); },5*60*1000);
 
 init();
 })();
